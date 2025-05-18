@@ -2,7 +2,7 @@
   "info": {
     "name": "AI Tutor API",
     "_postman_id": "ai-tutor-api-collection",
-    "description": "Postman collection for AI Tutor backend API (register, login, file upload, health check).",
+    "description": "Postman collection for AI Tutor backend API (register, login, file upload, file list, AI Q&A, health check).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -47,7 +47,7 @@
       }
     },
     {
-      "name": "Upload File",
+      "name": "Upload File(s)",
       "request": {
         "method": "POST",
         "header": [
@@ -57,7 +57,7 @@
           "mode": "formdata",
           "formdata": [
             {
-              "key": "upload",
+              "key": "uploads",
               "type": "file",
               "src": ""
             }
@@ -69,6 +69,43 @@
           "host": ["localhost"],
           "port": "8000",
           "path": ["api", "v1", "files", "upload"]
+        }
+      }
+    },
+    {
+      "name": "List Uploaded Files",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/files/list",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "files", "list"]
+        }
+      }
+    },
+    {
+      "name": "AI Q&A (Ask Teacher)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"What is the Pythagorean theorem?\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/ai/ask",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "ai", "ask"]
         }
       }
     },

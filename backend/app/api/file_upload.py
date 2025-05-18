@@ -6,11 +6,14 @@ from backend.app.core.database import get_db
 import os
 from uuid import uuid4
 from typing import List
+from backend.app.services.conversion_service import FileConversionService
 
 router = APIRouter()
 
 UPLOAD_DIR = 'uploaded_files'
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
 
 @router.post('/upload', status_code=201)
 def upload_file(
@@ -19,8 +22,11 @@ def upload_file(
     current_user: User = Depends(get_current_user)
 ):
     uploaded_files = []
+    image_paths = []
+    image_db_objs = []
+    # First, save all files and collect image paths if batch
     for upload in uploads:
-        ext = os.path.splitext(upload.filename)[1]
+        ext = os.path.splitext(upload.filename)[1].lower()
         unique_name = f"{uuid4().hex}{ext}"
         file_path = os.path.join(UPLOAD_DIR, unique_name)
         with open(file_path, 'wb') as f:
@@ -29,12 +35,43 @@ def upload_file(
             filename=upload.filename,
             content_type=upload.content_type,
             user_id=current_user.id,
-            path=file_path
+            path=file_path,
+            conversion_status="pending"
         )
         db.add(db_file)
         db.commit()
         db.refresh(db_file)
-        uploaded_files.append({"id": db_file.id, "filename": db_file.filename, "upload_time": db_file.upload_time})
+        if ext in IMAGE_EXTS:
+            image_paths.append(file_path)
+            image_db_objs.append(db_file)
+        else:
+            # Convert non-image files immediately
+            if ext in ['.pdf', '.txt', '.doc', '.docx']:
+                try:
+                    pptx_path = FileConversionService.convert_to_pptx(file_path, ext, UPLOAD_DIR)
+                    db_file.converted_pptx_path = pptx_path
+                    db_file.conversion_status = "success"
+                except Exception as e:
+                    db_file.conversion_status = f"failed: {e}"
+            else:
+                db_file.conversion_status = "not_applicable"
+            db.commit()
+        uploaded_files.append({"id": db_file.id, "filename": db_file.filename, "upload_time": db_file.upload_time, "conversion_status": db_file.conversion_status})
+    # If there are images, convert all to one PPTX
+    if image_paths:
+        try:
+            pptx_name = f"images_{uuid4().hex}.pptx"
+            pptx_path = os.path.join(UPLOAD_DIR, pptx_name)
+            FileConversionService.images_to_pptx(image_paths, pptx_path)
+            # Update all image db objects with the same pptx path
+            for db_file in image_db_objs:
+                db_file.converted_pptx_path = pptx_path
+                db_file.conversion_status = "success"
+                db.commit()
+        except Exception as e:
+            for db_file in image_db_objs:
+                db_file.conversion_status = f"failed: {e}"
+                db.commit()
     return {"uploaded": uploaded_files}
 
 @router.get('/list', status_code=200)
@@ -49,7 +86,9 @@ def list_files(
             "filename": f.filename,
             "content_type": f.content_type,
             "upload_time": f.upload_time,
-            "path": f.path
+            "path": f.path,
+            "converted_pptx_path": f.converted_pptx_path,
+            "conversion_status": f.conversion_status
         }
         for f in files
     ] 

@@ -2,160 +2,223 @@
 
 An innovative educational platform that combines AI-powered teaching with interactive visualizations and lab simulations.
 
-## 🚀 Project Status
+---
 
-### Current Phase: Development Setup
-- [x] Project planning
-- [x] Technical architecture design
-- [x] Development environment setup
-- [ ] Core feature implementation (in progress)
+## 🚀 Project Overview & Architecture
 
-### Feature Implementation Status
-1. **Foundation** (Complete)
-   - [x] Project structure setup
-   - [x] Development environment configuration
-   - [x] Basic frontend setup (Next.js + TypeScript + Tailwind CSS)
-   - [x] Basic backend setup (FastAPI)
-   - [x] Database setup (PostgreSQL)
-   - [x] Alembic migrations working
-   - [x] User model and users table created
-   - [x] Verified DB setup
-   - [x] Authentication endpoints (register, login)
+**AI Tutor** is a full-stack educational platform built with:
+- **Frontend:** Next.js, TypeScript, Tailwind CSS
+- **Backend:** FastAPI, PostgreSQL, Redis
+- **Containerization:** Docker Compose
 
-2. **Core Features** (In Progress)
-   - [x] User registration and login (backend)
-   - [x] User registration and login (frontend)
-   - [x] File upload and processing
-   - [ ] AI teacher integration (GPT-4/Gemini Q&A, subject-specific logic)
-   - [ ] Whiteboard and slide conversion (from uploaded files)
-   - [ ] Lab simulation triggers and visualization (basic MVP)
-   - [ ] Voice interaction (Q&A via Whisper, TTS)
-   - [ ] User session management and saving (video, notes)
-   - [ ] Interruptible lessons (future phase)
-   - [ ] Progressive whiteboarding (future phase)
-   - [ ] Subject-specific teaching styles (future phase)
+### Key Features
+- AI-powered teaching (OpenAI/Gemini)
+- File upload and automatic conversion to slides (PDF, DOCX, TXT, images → PPTX)
+- Modern dashboard and navigation
+- Persistent database and admin tools (pgAdmin, Redis Commander)
+- Automated database migrations
+- RESTful API with JWT authentication
+- Redis caching for AI answers
 
-3. **AI Integration** (Pending)
-   - [ ] GPT-4 Turbo integration
-   - [ ] Gemini 2.0 Flash integration
-   - [ ] Model fallback system
-   - [ ] Basic lab simulation
+---
 
-4. **Polish & Testing** (Pending)
-   - [ ] UI/UX improvements
-   - [ ] Performance optimization
-   - [ ] Testing
-   - [ ] Documentation
+## 🛠️ Getting Started
 
-## 🛠️ Development Setup
+### 1. Clone the Repository
+```bash
+git clone https://github.com/noman024/ai-tutor.git
+cd ai-tutor
+```
 
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- Docker and Docker Compose
-- Git
+### 2. Environment Setup
+- Copy and edit environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your API keys and configuration
+```
 
-### Environment Setup
+### 3. Build and Start All Services
+```bash
+docker-compose up --build
+# Or in detached mode
+docker-compose up -d --build
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/noman024/ai-tutor.git
-   cd ai-tutor
-   ```
+This will start:
+- Backend API at http://localhost:8000
+- Frontend at http://localhost:3000
+- PostgreSQL at http://localhost:5432
+- Redis at http://localhost:6379
+- pgAdmin at http://localhost:5050
+- Redis Commander at http://localhost:8081
 
-2. **Configure environment variables**
-   ```bash
-   # Copy the example env file
-   cp .env.example .env
-   # Edit .env with your API keys and configuration
-   ```
+### 4. Useful Development Commands
 
-3. **Start development environment with Docker**
-   ```bash
-   # Build and start all services
-   docker-compose up --build
-   
-   # Or start in detached mode
-   docker-compose up -d --build
-   ```
+#### Docker & Containers
+- Start all services:
+  ```bash
+  docker-compose up -d
+  ```
+- Stop all services:
+  ```bash
+  docker-compose stop
+  ```
+- View running containers:
+  ```bash
+  docker ps
+  ```
+- View logs for a service:
+  ```bash
+  docker-compose logs backend
+  docker-compose logs frontend
+  docker-compose logs db
+  docker-compose logs redis
+  docker-compose logs pgadmin
+  docker-compose logs redis-commander
+  ```
+- Restart a service:
+  ```bash
+  docker-compose restart backend
+  ```
+- Remove all containers (keep data):
+  ```bash
+  docker-compose down
+  ```
+- Remove all containers and volumes (delete all data!):
+  ```bash
+  docker-compose down -v
+  ```
 
-   This will start:
-   - Backend API at http://localhost:8000
-   - Frontend at http://localhost:3000
-   - PostgreSQL at  http://localhost:5432
-   - Redis at  http://localhost:6379
+#### Database & Migrations
+- Create a new migration:
+  ```bash
+  cd backend
+  PYTHONPATH=.. alembic revision --autogenerate -m "migration message"
+  ```
+- Apply migrations:
+  ```bash
+  cd backend
+  PYTHONPATH=.. alembic upgrade head
+  ```
 
-4. **Verify the setup**
-   ```bash
-   # Check backend health
-   curl http://localhost:8000/health
-   
-   # Check frontend
-   # Open http://localhost:3000 in your browser
-   ```
+#### Backend
+- Run backend locally (if not using Docker):
+  ```bash
+  cd backend
+  uvicorn main:app --reload --host 0.0.0.0 --port 8000
+  ```
+- Run backend tests:
+  ```bash
+  docker-compose exec backend pytest
+  ```
 
-### Frontend Development
+#### Frontend
+- Run frontend locally (if not using Docker):
+  ```bash
+  cd frontend
+  npm install
+  npm run dev
+  ```
+- Run frontend tests:
+  ```bash
+  docker-compose exec frontend npm test
+  ```
 
-The frontend is built with:
-- Next.js 14
-- TypeScript
-- Tailwind CSS
-- React Query for data fetching
-- Zustand for state management
+#### Redis & pgAdmin
+- Access Redis Commander: http://localhost:8081
+- Access pgAdmin: http://localhost:5050
 
-Key features:
-- Modern, responsive design
-- Type-safe development
-- Component-based architecture
-- Built-in API routes
-- Server-side rendering
+---
 
-### Backend Development
+## 🧩 Architecture Overview
+- **Frontend:** Next.js, TypeScript, Tailwind CSS
+- **Backend:** FastAPI, PostgreSQL, Redis
+- **Containerization:** Docker Compose
 
-The backend is built with:
-- FastAPI
-- PostgreSQL
-- Redis
-- SQLAlchemy
-- Alembic for migrations
+---
 
-Key features:
-- RESTful API
-- WebSocket support
-- JWT authentication
-- Database migrations
-- Redis caching (with best-practice utility and AI answer cache service)
+## 🛡️ API Reference & Example Requests
 
-### Development Workflow
+### Authentication
+- **Register:**
+  - `POST /api/v1/auth/register`
+  - Request: `{ "email": "user@example.com", "password": "yourpassword" }`
+  - Response: `{ "id": 1, "email": "user@example.com" }`
+- **Login:**
+  - `POST /api/v1/auth/login`
+  - Request: `{ "email": "user@example.com", "password": "yourpassword" }`
+  - Response: `{ "access_token": "...", "token_type": "bearer" }`
 
-1. **Feature Development Process**
-   - Each feature is developed in its own branch
-   - Feature branches are named: `feature/feature-name`
-   - Each feature must include tests
-   - Features are only merged after passing all tests
-   - README is updated after each feature completion
+### File Upload & Conversion
+- **Upload File(s):**
+  - `POST /api/v1/files/upload`
+  - Headers: `Authorization: Bearer <token>`
+  - Body: `form-data` with one or more files (`uploads`)
+  - Supported: PPTX, PDF, DOCX, TXT, images (jpg, png, gif, bmp)
+  - Non-PPTX files are auto-converted to PPTX. Multiple images are combined into one PPTX.
+- **List Uploaded Files:**
+  - `GET /api/v1/files/list`
+  - Headers: `Authorization: Bearer <token>`
+  - Response: List of files with conversion status and PPTX path
 
-2. **Testing Requirements**
-   - Unit tests for all new code
-   - Integration tests for API endpoints
-   - End-to-end tests for critical user flows
-   - Performance testing for AI interactions
+### AI Q&A
+- **Ask the AI Teacher:**
+  - `POST /api/v1/ai/ask`
+  - Headers: `Authorization: Bearer <token>`
+  - Body: `{ "question": "What is the Pythagorean theorem?" }`
+  - Response: `{ "answer": "...", "cached": false, "provider": "openai" }`
 
-3. **Code Quality**
-   - Follow PEP 8 for Python code
-   - Follow ESLint rules for JavaScript/TypeScript
-   - All code must be documented
-   - All PRs require code review
+### Health Check
+- `GET /health`
 
-4. **Feature Implementation Checklist**
-   - [ ] Create feature branch
-   - [ ] Implement feature
-   - [ ] Write tests
-   - [ ] Run all tests
-   - [ ] Update documentation
-   - [ ] Create pull request
-   - [ ] Code review
-   - [ ] Merge to main
+---
+
+## 📝 Example API Requests (Postman)
+
+**Register:**
+```json
+POST http://localhost:8000/api/v1/auth/register
+{
+  "email": "user@example.com",
+  "password": "yourpassword"
+}
+```
+
+**Login:**
+```json
+POST http://localhost:8000/api/v1/auth/login
+{
+  "email": "user@example.com",
+  "password": "yourpassword"
+}
+```
+
+**Upload File(s):**
+- POST http://localhost:8000/api/v1/files/upload
+- Headers: `Authorization: Bearer <token>`
+- Body: form-data, key: `uploads`, type: file
+
+**List Files:**
+- GET http://localhost:8000/api/v1/files/list
+- Headers: `Authorization: Bearer <token>`
+
+**Ask AI Teacher:**
+```json
+POST http://localhost:8000/api/v1/ai/ask
+Headers: Authorization: Bearer <token>
+{
+  "question": "What is the Pythagorean theorem?"
+}
+```
+
+---
+
+## 🛠️ Troubleshooting
+- If you lose your database or pgAdmin setup, make sure you are not using `docker-compose down -v` unless you want to delete all data.
+- For persistent pgAdmin setup, a volume is now configured in `docker-compose.yml`.
+- If migrations do not run, check the backend logs and ensure the entrypoint script is present and executable.
+
+---
 
 ## 📁 Project Structure
 ```
@@ -180,7 +243,7 @@ ai-tutor/
 ├── docker/
 │   ├── backend/          # Backend Dockerfile
 │   └── frontend/         # Frontend Dockerfile
-├── docs/                 # Documentation
+├── docs/                 # Documentation (legacy, now merged here)
 ├── scripts/              # Utility scripts
 ├── .env.example          # Example environment variables
 ├── .gitignore           # Git ignore file
@@ -189,91 +252,18 @@ ai-tutor/
 └── README.md            # Project documentation
 ```
 
-## 🧪 Testing
+---
 
-### Running Tests
-```bash
-# Backend tests
-docker-compose exec backend pytest
-
-# Frontend tests
-docker-compose exec frontend npm test
-
-# End-to-end tests
-docker-compose exec frontend npm run test:e2e
-```
-
-### Test Coverage
-- Backend: Aim for >80% coverage
-- Frontend: Aim for >70% coverage
-- Critical paths: 100% coverage
-
-## 📝 Documentation
-
-- API documentation is available at http://localhost:8000/docs when running the backend
-- Component documentation will be available in the frontend storybook
-- Architecture decisions are documented in `docs/architecture/`
-- API specifications are in `docs/api/`
-- See [docs/getting_started.md](docs/getting_started.md) for setup and all development commands used so far.
-
-## 🔄 CI/CD
-
-- GitHub Actions for automated testing
-- Automated deployment to staging
-- Manual deployment to production
-- Automated documentation updates
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🔐 Security
-
-- All API keys are stored in environment variables
-- Regular security audits
-- Dependencies are regularly updated
-- Security issues should be reported privately
-
-## 🛡️ API Endpoints (Authentication)
-
-- `POST /api/v1/auth/register` — Register a new user
-  - Request: `{ "email": "user@example.com", "password": "yourpassword" }`
-  - Response: `{ "id": 1, "email": "user@example.com" }`
-
-- `POST /api/v1/auth/login` — Login and get JWT token
-  - Request: `{ "email": "user@example.com", "password": "yourpassword" }`
-  - Response: `{ "access_token": "...", "token_type": "bearer" }`
-
-## 🖥️ Frontend Authentication Flow
-
-- `/register` — Register a new user
-- `/login` — Login and get JWT token (stored in localStorage)
-- `/dashboard` — Protected page, only accessible if logged in
-
-**How it works:**
-- Register a new user via the form
-- Login with your credentials
-- On success, you are redirected to `/dashboard`
-- Logout removes the token and redirects to `/login`
-
-### Roadmap & Tasklist (Prioritized)
+## 🚦 Roadmap & Tasklist (Prioritized)
 
 #### **MVP (Phase 1)**
 - [x] User registration/login (backend & frontend)
 - [x] File upload (PPT/PPTX, PDF, DOC, TXT, images)
-- [ ] File conversion pipeline (PDF/DOC/TXT/Image → PPTX)
-- [ ] Store and manage slide decks (original and converted PPTX)
-- [ ] Dashboard: List and select slide decks
-- [ ] AI teacher Q&A (text, GPT-4/Gemini, with Redis caching)
-- [ ] Persistent database and admin tools (pgAdmin, Redis Commander)
+- [x] File conversion pipeline (PDF/DOC/TXT/Image → PPTX)
+- [x] Store and manage slide decks (original and converted PPTX)
+- [x] Dashboard: List and select slide decks
+- [x] AI teacher Q&A (text, GPT-4/Gemini, with Redis caching)
+- [x] Persistent database and admin tools (pgAdmin, Redis Commander)
 
 #### **Phase 2: Core Teaching Experience**
 - [ ] Avatar/virtual teacher (realistic human-like AI teacher)
@@ -301,4 +291,37 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-This README will be updated as the project progresses. Each feature implementation will be documented here with its status and any relevant notes. 
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🔐 Security
+
+- All API keys are stored in environment variables
+- Regular security audits
+- Dependencies are regularly updated
+- Security issues should be reported privately
+
+## 🖥️ Frontend Authentication Flow
+
+- `/register` — Register a new user
+- `/login` — Login and get JWT token (stored in localStorage)
+- `/dashboard` — Protected page, only accessible if logged in
+
+**How it works:**
+- Register a new user via the form
+- Login with your credentials
+- On success, you are redirected to `/dashboard`
+- Logout removes the token and redirects to `/login` 

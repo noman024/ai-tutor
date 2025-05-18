@@ -12,5 +12,7 @@ class File(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     upload_time = Column(DateTime, default=datetime.utcnow)
     path = Column(String, nullable=False)
+    converted_pptx_path = Column(String, nullable=True)
+    conversion_status = Column(String, default="pending")
 
     user = relationship('User', back_populates='files') 

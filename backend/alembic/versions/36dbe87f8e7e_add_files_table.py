@@ -27,6 +27,8 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('upload_time', sa.DateTime(), nullable=True),
     sa.Column('path', sa.String(), nullable=False),
+    sa.Column('converted_pptx_path', sa.String(), nullable=True),
+    sa.Column('conversion_status', sa.String(), nullable=True, server_default='pending'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
