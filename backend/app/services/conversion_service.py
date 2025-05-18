@@ -1,6 +1,6 @@
 import os
 from pptx import Presentation
-from pptx.util import Inches, Pt, Px
+from pptx.util import Inches, Pt
 from pathlib import Path
 import pdfplumber
 from docx import Document
@@ -63,17 +63,19 @@ class FileConversionService:
             slide = prs.slides.add_slide(blank_slide_layout)
             with Image.open(img_path) as img:
                 width_px, height_px = img.size
-            # Convert pixels to EMUs
-            width = Px(width_px)
-            height = Px(height_px)
+            # Convert pixels to inches (assuming 96 DPI)
+            width_inches = width_px / 96
+            height_inches = height_px / 96
+            width = Inches(width_inches)
+            height = Inches(height_inches)
             slide_width = prs.slide_width
             slide_height = prs.slide_height
             # Scale image to fit slide while maintaining aspect ratio
             scale = min(slide_width / width, slide_height / height, 1)
-            img_width = int(width * scale)
-            img_height = int(height * scale)
-            left = int((slide_width - img_width) / 2)
-            top = int((slide_height - img_height) / 2)
+            img_width = width * scale
+            img_height = height * scale
+            left = (slide_width - img_width) / 2
+            top = (slide_height - img_height) / 2
             slide.shapes.add_picture(img_path, left, top, width=img_width, height=img_height)
         prs.save(pptx_path)
         return pptx_path
