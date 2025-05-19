@@ -101,58 +101,91 @@ Please provide a clear, educational response that:
 
 Student's question: {question}"""
     
-    logger.info("Cache miss, trying OpenAI...")
-    # Try OpenAI first
+    # Get model providers from settings
+    primary_provider = settings.PRIMARY_MODEL_PROVIDER.lower()
+    fallback_provider = settings.FALLBACK_MODEL_PROVIDER.lower()
+    logger.info(f"Settings - PRIMARY_MODEL_PROVIDER: {settings.PRIMARY_MODEL_PROVIDER}, FALLBACK_MODEL_PROVIDER: {settings.FALLBACK_MODEL_PROVIDER}")
+
+    def call_openai(text):
+        try:
+            api_key = settings.OPENAI_API_KEY.get_secret_value()
+            client = OpenAI(api_key=api_key)
+            request_data = {
+                "model": "gpt-4o-mini",  # Using GPT-4o Mini for text
+                "messages": [{"role": "user", "content": text}],
+                "temperature": 0.7,
+                "max_tokens": 1024
+            }
+            response = client.chat.completions.create(**request_data)
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            logger.error(f"OpenAI request failed: {str(e)}", exc_info=True)
+            raise
+
+    def call_gemini(text):
+        try:
+            api_key = settings.GEMINI_API_KEY.get_secret_value()
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel("gemini-2.0-flash")
+            response = model.generate_content(
+                text,
+                generation_config={
+                    "temperature": 0.7,
+                    "max_output_tokens": 1024,
+                }
+            )
+            return response.text.strip()
+        except Exception as e:
+            logger.error(f"Gemini request failed: {str(e)}", exc_info=True)
+            raise
+
+    def call_model(provider, text):
+        logger.info(f"About to call model provider: {provider}")
+        if provider not in ["openai", "gemini"]:
+            logger.error(f"Invalid provider specified: {provider}")
+            raise ValueError(f"Provider must be 'openai' or 'gemini', got: {provider}")
+
+        if provider == "openai":
+            return call_openai(text)
+        elif provider == "gemini":
+            return call_gemini(text)
+
     try:
-        api_key = settings.OPENAI_API_KEY.get_secret_value()
-        logger.info(f"OpenAI API key configured (first 8 chars: {api_key[:8]}...)")
-        
-        # Initialize OpenAI client
-        client = OpenAI(api_key=api_key)
-        
-        # Log the exact request we're about to make
-        request_data = {
-            "model": "gpt-3.5-turbo",
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.7,
-            "max_tokens": 1024  # Increased for longer responses with slide content
+        logger.info(f"Starting ask-ai - Using primary provider: {primary_provider}")
+        if primary_provider not in ["openai", "gemini"]:
+            logger.error(f"Invalid primary provider in settings: {primary_provider}")
+            raise ValueError(f"PRIMARY_MODEL_PROVIDER must be 'openai' or 'gemini', got: {primary_provider}")
+
+        answer = call_model(primary_provider, prompt)
+        logger.info(f"Successfully got response from primary provider: {primary_provider}")
+        set_cached_answer(cache_key, answer)
+        return {
+            "answer": answer,
+            "cached": False,
+            "provider": f"{primary_provider}"
         }
-        logger.info(f"Making OpenAI request with data: {request_data}")
-        
-        # Make the request using the new client
-        response = client.chat.completions.create(**request_data)
-        
-        # Log the raw response
-        logger.info(f"OpenAI raw response: {response}")
-        
-        answer = response.choices[0].message.content.strip()
-        logger.info(f"OpenAI request successful. Answer length: {len(answer)}")
-        set_cached_answer(cache_key, answer)
-        return {"answer": answer, "cached": False, "provider": "openai"}
     except Exception as e:
-        logger.error(f"OpenAI request failed with error: {str(e)}", exc_info=True)
-        # Log the full exception details
-        import traceback
-        logger.error(f"Full OpenAI error traceback:\n{traceback.format_exc()}")
-    
-    logger.info("Falling back to Gemini...")
-    # Fallback to Gemini
-    try:
-        api_key = settings.GEMINI_API_KEY.get_secret_value()
-        logger.info(f"Gemini API key configured (first 8 chars: {api_key[:8]}...)")
-        genai.configure(api_key=api_key)
-        logger.info("Making Gemini request...")
-        model = genai.GenerativeModel("gemini-2.0-flash")
-        gemini_response = model.generate_content(prompt)
-        answer = gemini_response.text.strip()
-        logger.info(f"Gemini request successful. Answer length: {len(answer)}")
-        set_cached_answer(cache_key, answer)
-        return {"answer": answer, "cached": False, "provider": "gemini"}
-    except Exception as e:
-        logger.error(f"Gemini request failed with error: {str(e)}", exc_info=True)
-        import traceback
-        logger.error(f"Full Gemini error traceback:\n{traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail="AI models are currently unavailable.")
+        logger.error(f"Primary provider ({primary_provider}) failed with error: {str(e)}")
+        try:
+            logger.info(f"Primary provider failed, attempting fallback provider: {fallback_provider}")
+            if fallback_provider not in ["openai", "gemini"]:
+                logger.error(f"Invalid fallback provider in settings: {fallback_provider}")
+                raise ValueError(f"FALLBACK_MODEL_PROVIDER must be 'openai' or 'gemini', got: {fallback_provider}")
+
+            answer = call_model(fallback_provider, prompt)
+            logger.info(f"Successfully got response from fallback provider: {fallback_provider}")
+            set_cached_answer(cache_key, answer)
+            return {
+                "answer": answer,
+                "cached": False,
+                "provider": f"{fallback_provider}-fallback"
+            }
+        except Exception as e2:
+            logger.error(f"Both providers failed. Primary ({primary_provider}) error: {str(e)}. Fallback ({fallback_provider}) error: {str(e2)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Both AI providers failed. Primary ({primary_provider}) error: {str(e)}. Fallback ({fallback_provider}) error: {str(e2)}"
+            )
 
 @router.get("/slides/{slide_deck_id}")
 def get_slide_deck_content(

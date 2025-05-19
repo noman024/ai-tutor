@@ -181,9 +181,15 @@ This will start:
   - `POST /api/v1/ai/ask`
   - Headers: `Authorization: Bearer <token>`
   - Body: `{ "question": "What is the Pythagorean theorem?", "slide_deck_id": 1 }`
-  - Response: `{ "answer": "...", "cached": false, "provider": "openai" }`
+  - Response: `{ "answer": "...", "cached": false, "provider": "gemini" }` or `{ "answer": "...", "cached": false, "provider": "openai-fallback" }`
   - When `slide_deck_id` is provided, the AI uses the slide deck content as primary reference
   - The AI clearly indicates which parts of the answer come from the slides vs. general knowledge
+  - Uses the configured primary model provider (default: Gemini) with fallback to the secondary provider
+  - Model providers can be configured in `.env`:
+    ```
+    PRIMARY_MODEL_PROVIDER=gemini  # or openai
+    FALLBACK_MODEL_PROVIDER=openai  # or gemini
+    ```
 - **List Slides in a Deck:**
   - `GET /api/v1/ai/slides/{slide_deck_id}`
   - Headers: `Authorization: Bearer <token>`
@@ -198,9 +204,12 @@ This will start:
   - `POST /api/v1/ai/explain-slide`
   - Headers: `Authorization: Bearer <token>`, `Content-Type: application/json`
   - Body: `{ "slide_deck_id": 1, "slide_number": 2 }`
-  - Response: `{ "explanation": "...", "provider": "openai" }`
+  - Response: `{ "explanation": "...", "provider": "gemini-multimodal" }` or `{ "explanation": "...", "provider": "openai-multimodal-fallback" }`
   - Only uses the content of the specified slide for the explanation
-  - **Now supports both text and image-based slides using OpenAI Vision (primary) and Gemini Vision (fallback)**
+  - Supports both text and image-based slides using the configured primary model provider (default: Gemini) with fallback to the secondary provider
+  - For text-only slides: Uses GPT-4o Mini (OpenAI) or Gemini 2.0 Flash (Gemini)
+  - For multimodal slides: Uses the same models with vision capabilities
+  - Model providers can be configured in `.env` (see above)
 
 ### Health Check
 - `GET /health`
@@ -277,7 +286,7 @@ Headers: Authorization: Bearer <token>
 Response:
 {
   "explanation": "This slide introduces the concept of ...",
-  "provider": "openai"
+  "provider": "gemini-multimodal"
 }
 ```
 

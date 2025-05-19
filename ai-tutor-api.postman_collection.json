@@ -107,7 +107,7 @@
           "port": "8000",
           "path": ["api", "v1", "ai", "ask"]
         },
-        "description": "Ask a question to the AI tutor. Optionally provide a slide_deck_id to use that deck's content as reference."
+        "description": "Ask a question to the AI tutor. Optionally provide a slide_deck_id to use that deck's content as reference. Uses the configured primary model provider (default: Gemini) with fallback to the secondary provider. Model providers can be configured in .env: PRIMARY_MODEL_PROVIDER=gemini (or openai), FALLBACK_MODEL_PROVIDER=openai (or gemini)."
       }
     },
     {
@@ -191,7 +191,7 @@
           "port": "8000",
           "path": ["api", "v1", "ai", "explain-slide"]
         },
-        "description": "Get an AI-generated explanation for a specific slide in a deck. Only the content of the specified slide is used. Now supports both text and image-based slides using OpenAI Vision (primary) and Gemini Vision (fallback)."
+        "description": "Get an AI-generated explanation for a specific slide in a deck. Only the content of the specified slide is used. Supports both text and image-based slides using the configured primary model provider (default: Gemini) with fallback to the secondary provider. For text-only slides: Uses GPT-4o Mini (OpenAI) or Gemini 2.0 Flash (Gemini). For multimodal slides: Uses the same models with vision capabilities. Model providers can be configured in .env: PRIMARY_MODEL_PROVIDER=gemini (or openai), FALLBACK_MODEL_PROVIDER=openai (or gemini)."
       }
     },
     {
