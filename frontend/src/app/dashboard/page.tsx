@@ -200,10 +200,11 @@ export default function DashboardPage() {
           <div className="text-gray-500">No slide decks available yet.</div>
         ) : (
           <select
-            className="border rounded px-3 py-2"
+            className="border rounded px-3 py-2 w-full max-w-md"
             value={selectedDeckId ?? ''}
             onChange={e => setSelectedDeckId(Number(e.target.value))}
           >
+            <option value="">Select a slide deck (optional)</option>
             {decks.map(deck => (
               <option key={deck.id} value={deck.id}>
                 {deck.filename} {deck.isConverted ? '(Converted)' : ''}
@@ -212,7 +213,7 @@ export default function DashboardPage() {
           </select>
         )}
       </div>
-      <AiQaForm />
+      <AiQaForm selectedSlideDeckId={selectedDeckId} />
     </div>
   );
 } 

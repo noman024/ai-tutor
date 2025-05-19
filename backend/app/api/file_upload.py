@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from backend.app.models import File as FileModel, User
 from backend.app.api.auth import get_current_user
 from backend.app.core.database import get_db
+from backend.app.utils.file_utils import generate_unique_filename
 import os
-from uuid import uuid4
 from typing import List
 from backend.app.services.conversion_service import FileConversionService
 from fastapi.responses import FileResponse
@@ -28,12 +28,12 @@ def upload_file(
     # First, save all files and collect image paths if batch
     for upload in uploads:
         ext = os.path.splitext(upload.filename)[1].lower()
-        unique_name = f"{uuid4().hex}{ext}"
-        file_path = os.path.join(UPLOAD_DIR, unique_name)
+        unique_filename = generate_unique_filename(upload.filename)
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
         with open(file_path, 'wb') as f:
             f.write(upload.file.read())
         db_file = FileModel(
-            filename=upload.filename,
+            filename=upload.filename,  # Store original filename
             content_type=upload.content_type,
             user_id=current_user.id,
             path=file_path,
@@ -57,11 +57,16 @@ def upload_file(
             else:
                 db_file.conversion_status = "not_applicable"
             db.commit()
-        uploaded_files.append({"id": db_file.id, "filename": db_file.filename, "upload_time": db_file.upload_time, "conversion_status": db_file.conversion_status})
+        uploaded_files.append({
+            "id": db_file.id,
+            "filename": db_file.filename,  # Original filename
+            "upload_time": db_file.upload_time,
+            "conversion_status": db_file.conversion_status
+        })
     # If there are images, convert all to one PPTX
     if image_paths:
         try:
-            pptx_name = f"images_{uuid4().hex}.pptx"
+            pptx_name = generate_unique_filename("images.pptx")
             pptx_path = os.path.join(UPLOAD_DIR, pptx_name)
             FileConversionService.images_to_pptx(image_paths, pptx_path)
             # Update all image db objects with the same pptx path

@@ -15,9 +15,9 @@ An innovative educational platform that combines AI-powered teaching with intera
 - AI-powered teaching (OpenAI/Gemini)
 - File upload and automatic conversion to slides (PDF, DOCX, TXT, images → PPTX)
 - Modern dashboard and navigation
-- **File list with conversion status and download/preview links**
-- **Slide deck selection from converted files**
-- **AI Q&A form for interactive questions**
+- File list with conversion status and download/preview links
+- Slide deck selection from converted files
+- AI Q&A with slide deck context awareness
 - Persistent database and admin tools (pgAdmin, Redis Commander)
 - Automated database migrations
 - RESTful API with JWT authentication
@@ -27,8 +27,9 @@ An innovative educational platform that combines AI-powered teaching with intera
 - Upload files (PDF, DOCX, TXT, images)
 - View a list of uploaded files with conversion status
 - Download original and converted PPTX files
-- **Select a slide deck from converted files for further actions**
-- **Ask questions to the AI tutor and view answers**
+- Select a slide deck from converted files for AI Q&A
+- Ask questions to the AI tutor with slide deck context
+- View AI responses with source attribution (slides vs. general knowledge)
 
 ---
 
@@ -175,8 +176,10 @@ This will start:
 - **Ask the AI Teacher:**
   - `POST /api/v1/ai/ask`
   - Headers: `Authorization: Bearer <token>`
-  - Body: `{ "question": "What is the Pythagorean theorem?" }`
+  - Body: `{ "question": "What is the Pythagorean theorem?", "slide_deck_id": 1 }`
   - Response: `{ "answer": "...", "cached": false, "provider": "openai" }`
+  - When `slide_deck_id` is provided, the AI uses the slide deck content as primary reference
+  - The AI clearly indicates which parts of the answer come from the slides vs. general knowledge
 
 ### Health Check
 - `GET /health`
@@ -217,7 +220,8 @@ POST http://localhost:8000/api/v1/auth/login
 POST http://localhost:8000/api/v1/ai/ask
 Headers: Authorization: Bearer <token>
 {
-  "question": "What is the Pythagorean theorem?"
+  "question": "What is the Pythagorean theorem?",
+  "slide_deck_id": 1  // Optional: Use slide deck content as reference
 }
 ```
 
@@ -273,15 +277,16 @@ ai-tutor/
 - [x] Store and manage slide decks (original and converted PPTX)
 - [x] Dashboard: List and select slide decks
 - [x] AI teacher Q&A (text, GPT-4/Gemini, with Redis caching)
+- [x] Slide deck-aware AI Q&A (context from selected slides)
 - [x] Persistent database and admin tools (pgAdmin, Redis Commander)
 
 #### **Phase 2: Core Teaching Experience**
 - [ ] Avatar/virtual teacher (realistic human-like AI teacher)
 - [ ] Teaching session: AI steps through slides, explains line-by-line
 - [ ] Real-time slide navigation (AI and user can go back/forth)
-- [ ] User can ask questions (text) about current slide/content
-- [ ] AI answers contextually, referencing current slide
+- [ ] Contextual Q&A (AI references current slide and previous context)
 - [ ] UI: Show current slide, avatar, and Q&A area
+- [ ] Slide content extraction and formatting improvements
 
 #### **Phase 3: Advanced Interaction**
 - [ ] Voice Q&A (Whisper integration, TTS for AI responses)

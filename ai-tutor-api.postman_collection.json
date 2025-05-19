@@ -98,7 +98,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"question\": \"What is the Pythagorean theorem?\"\n}"
+          "raw": "{\n  \"question\": \"What is the Pythagorean theorem?\",\n  \"slide_deck_id\": 1\n}"
         },
         "url": {
           "raw": "http://localhost:8000/api/v1/ai/ask",
@@ -106,7 +106,8 @@
           "host": ["localhost"],
           "port": "8000",
           "path": ["api", "v1", "ai", "ask"]
-        }
+        },
+        "description": "Ask a question to the AI tutor. Optionally provide a slide_deck_id to use that deck's content as reference."
       }
     },
     {

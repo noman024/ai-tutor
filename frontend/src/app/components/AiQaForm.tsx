@@ -9,7 +9,11 @@ interface AiResponse {
   provider: 'openai' | 'gemini' | 'cache';
 }
 
-export default function AiQaForm() {
+interface AiQaFormProps {
+  selectedSlideDeckId: number | null;
+}
+
+export default function AiQaForm({ selectedSlideDeckId }: AiQaFormProps) {
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,11 +36,15 @@ export default function AiQaForm() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ question: question.trim() })
+        body: JSON.stringify({ 
+          question: question.trim(),
+          slide_deck_id: selectedSlideDeckId
+        })
       });
 
       if (!res.ok) {
-        throw new Error('Failed to get response');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to get response');
       }
 
       const data = await res.json();
@@ -65,12 +73,19 @@ export default function AiQaForm() {
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Ask AI Tutor</h2>
+        {selectedSlideDeckId && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
+            AI Tutor will use the selected slide deck as a reference for answering your question.
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <textarea
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ask any question about your uploaded materials..."
+              placeholder={selectedSlideDeckId 
+                ? "Ask any question about the selected slide deck..."
+                : "Ask any question about your uploaded materials..."}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               rows={3}
               disabled={loading}

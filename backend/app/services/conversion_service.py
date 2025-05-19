@@ -5,6 +5,7 @@ from pathlib import Path
 import pdfplumber
 from docx import Document
 from PIL import Image
+from backend.app.utils.file_utils import generate_unique_filename
 
 class FileConversionService:
     @staticmethod
@@ -119,8 +120,11 @@ class FileConversionService:
 
     @staticmethod
     def convert_to_pptx(src_path: str, ext: str, dest_dir: str, batch_image_paths: list = None) -> str:
-        pptx_name = Path(src_path).stem + '.pptx'
+        # Generate PPTX filename based on original filename
+        original_name = Path(src_path).stem
+        pptx_name = generate_unique_filename(f"{original_name}.pptx")
         pptx_path = os.path.join(dest_dir, pptx_name)
+        
         if ext.lower() == '.txt':
             return FileConversionService.txt_to_pptx(src_path, pptx_path)
         elif ext.lower() == '.pdf':
