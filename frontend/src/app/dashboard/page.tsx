@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import FileList from '../components/FileList';
 import AiQaForm from '../components/AiQaForm';
+import TeachingSession from '../components/TeachingSession';
 
 interface Deck {
   id: number;
@@ -213,6 +214,7 @@ export default function DashboardPage() {
           </select>
         )}
       </div>
+      <TeachingSession selectedSlideDeckId={selectedDeckId} />
       <AiQaForm selectedSlideDeckId={selectedDeckId} />
     </div>
   );

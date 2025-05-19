@@ -18,6 +18,7 @@ An innovative educational platform that combines AI-powered teaching with intera
 - File list with conversion status and download/preview links
 - Slide deck selection from converted files
 - AI Q&A with slide deck context awareness
+- **Virtual teacher avatar in Q&A area**
 - Persistent database and admin tools (pgAdmin, Redis Commander)
 - Automated database migrations
 - RESTful API with JWT authentication
@@ -30,6 +31,9 @@ An innovative educational platform that combines AI-powered teaching with intera
 - Select a slide deck from converted files for AI Q&A
 - Ask questions to the AI tutor with slide deck context
 - View AI responses with source attribution (slides vs. general knowledge)
+- **See a friendly virtual teacher avatar that reacts to your questions**
+- **Start an interactive teaching session: step through slides, and get AI explanations for each slide**
+- **See slide content highlighted when the AI teacher is explaining (pointing effect)**
 
 ---
 
@@ -180,6 +184,23 @@ This will start:
   - Response: `{ "answer": "...", "cached": false, "provider": "openai" }`
   - When `slide_deck_id` is provided, the AI uses the slide deck content as primary reference
   - The AI clearly indicates which parts of the answer come from the slides vs. general knowledge
+- **List Slides in a Deck:**
+  - `GET /api/v1/ai/slides/{slide_deck_id}`
+  - Headers: `Authorization: Bearer <token>`
+  - Response: `{ "slides": [ { "slide_number": 1, "content": "...", "image_available": true }, ... ] }`
+  - Only returns slides if the user owns the deck and it is converted
+  - **If `image_available` is true, the slide image can be viewed using the endpoint below**
+- **Get Slide Image:**
+  - `GET /api/v1/ai/slide-image/{slide_deck_id}/{slide_number}`
+  - Headers: `Authorization: Bearer <token>`
+  - Response: Raw image file (PNG)
+- **Explain a Slide:**
+  - `POST /api/v1/ai/explain-slide`
+  - Headers: `Authorization: Bearer <token>`, `Content-Type: application/json`
+  - Body: `{ "slide_deck_id": 1, "slide_number": 2 }`
+  - Response: `{ "explanation": "...", "provider": "openai" }`
+  - Only uses the content of the specified slide for the explanation
+  - **Now supports both text and image-based slides using OpenAI Vision (primary) and Gemini Vision (fallback)**
 
 ### Health Check
 - `GET /health`
@@ -222,6 +243,41 @@ Headers: Authorization: Bearer <token>
 {
   "question": "What is the Pythagorean theorem?",
   "slide_deck_id": 1  // Optional: Use slide deck content as reference
+}
+```
+
+**List Slides in a Deck:**
+```json
+GET http://localhost:8000/api/v1/ai/slides/1
+Headers: Authorization: Bearer <token>
+Response:
+{
+  "slides": [
+    { "slide_number": 1, "content": "Introduction to AI", "image_available": true },
+    { "slide_number": 2, "content": "What is Machine Learning?", "image_available": true }
+  ]
+}
+```
+
+**Get Slide Image:**
+```json
+GET http://localhost:8000/api/v1/ai/slide-image/1/1
+Headers: Authorization: Bearer <token>
+Response: Raw image file (PNG)
+```
+
+**Explain a Slide:**
+```json
+POST http://localhost:8000/api/v1/ai/explain-slide
+Headers: Authorization: Bearer <token>
+{
+  "slide_deck_id": 1,
+  "slide_number": 2
+}
+Response:
+{
+  "explanation": "This slide introduces the concept of ...",
+  "provider": "openai"
 }
 ```
 
@@ -281,8 +337,15 @@ ai-tutor/
 - [x] Persistent database and admin tools (pgAdmin, Redis Commander)
 
 #### **Phase 2: Core Teaching Experience**
-- [ ] Avatar/virtual teacher (realistic human-like AI teacher)
-- [ ] Teaching session: AI steps through slides, explains line-by-line
+- [x] Avatar/virtual teacher (realistic human-like AI teacher)
+- [x] Interactive teaching session (AI steps through slides, explains, points, draws)
+    - [x] Backend: Endpoint to list slides for a given deck (with slide numbers and content)
+    - [x] Backend: Endpoint for "explain this slide" (AI uses only the current slide's content)
+    - [x] Frontend: Teaching session UI (slide viewer, avatar, navigation controls)
+    - [x] Frontend: "Teach me this slide" button (calls backend, shows AI explanation)
+    - [x] Frontend: Highlight/pointing effect for slide content (MVP: text highlight)
+    - [ ] Frontend: User can ask questions about the current slide (optional for MVP)
+    - [ ] Frontend: Simple annotation/drawing overlay (optional for MVP)
 - [ ] Real-time slide navigation (AI and user can go back/forth)
 - [ ] Contextual Q&A (AI references current slide and previous context)
 - [ ] UI: Show current slide, avatar, and Q&A area
@@ -303,6 +366,9 @@ ai-tutor/
 - [ ] Subject-specific teaching styles and behaviors
 - [ ] Real-time Q&A (voice and text)
 - [ ] Guardian/teacher alerts, progress tracking
+
+#### **Phase 5: Vision Model Integration**
+- [x] Vision model integration for image-based slides (OpenAI primary, Gemini fallback)
 
 ---
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Send, Loader2 } from 'lucide-react';
+import AvatarTeacher from './AvatarTeacher';
 
 interface AiResponse {
   answer: string;
@@ -71,6 +72,7 @@ export default function AiQaForm({ selectedSlideDeckId }: AiQaFormProps) {
 
   return (
     <div className="space-y-6">
+      <AvatarTeacher state={loading ? 'thinking' : response ? 'answering' : 'idle'} />
       <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Ask AI Tutor</h2>
         {selectedSlideDeckId && (

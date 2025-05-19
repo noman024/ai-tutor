@@ -115,6 +115,22 @@ class FileConversionService:
             left = (slide_width - img_width) / 2
             top = (slide_height - img_height) / 2
             slide.shapes.add_picture(img_path, left, top, width=img_width, height=img_height)
+            # Add caption (filename) below the image
+            caption_text = os.path.basename(img_path)
+            caption_top = top + img_height + Inches(0.2)
+            caption_height = Inches(0.6)
+            # Only add caption if there's space below the image
+            if caption_top + caption_height < slide_height:
+                caption_left = Inches(0.5)
+                caption_width = slide_width - Inches(1)
+                textbox = slide.shapes.add_textbox(caption_left, caption_top, caption_width, caption_height)
+                tf = textbox.text_frame
+                tf.word_wrap = True
+                p = tf.add_paragraph()
+                p.text = caption_text
+                p.font.size = Pt(18)
+                p.font.bold = True
+                p.font.italic = True
         prs.save(pptx_path)
         return pptx_path
 

@@ -154,6 +154,62 @@
           "path": ["api", "v1", "files", "download-pptx", "1"]
         }
       }
+    },
+    {
+      "name": "List Slides in a Deck",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/ai/slides/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "ai", "slides", "1"]
+        },
+        "description": "List all slides (number and content) for a given slide deck. User must own the deck."
+      }
+    },
+    {
+      "name": "Explain a Slide",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"slide_deck_id\": 1,\n  \"slide_number\": 2\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/ai/explain-slide",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "ai", "explain-slide"]
+        },
+        "description": "Get an AI-generated explanation for a specific slide in a deck. Only the content of the specified slide is used. Now supports both text and image-based slides using OpenAI Vision (primary) and Gemini Vision (fallback)."
+      }
+    },
+    {
+      "name": "Get Slide Image",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/ai/slide-image/1/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "ai", "slide-image", "1", "1"]
+        },
+        "description": "Get the raw image for a specific slide in a deck. Returns the image file (PNG, JPEG, etc)."
+      }
     }
   ],
   "event": [],

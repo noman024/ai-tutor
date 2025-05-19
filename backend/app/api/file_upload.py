@@ -25,6 +25,7 @@ def upload_file(
     uploaded_files = []
     image_paths = []
     image_db_objs = []
+
     # First, save all files and collect image paths if batch
     for upload in uploads:
         ext = os.path.splitext(upload.filename)[1].lower()
@@ -32,6 +33,11 @@ def upload_file(
         file_path = os.path.join(UPLOAD_DIR, unique_filename)
         with open(file_path, 'wb') as f:
             f.write(upload.file.read())
+        
+        # Check if it's a direct PPTX upload
+        is_pptx = (upload.content_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation' or 
+                  upload.filename.lower().endswith('.pptx'))
+        
         db_file = FileModel(
             filename=upload.filename,  # Store original filename
             content_type=upload.content_type,
@@ -39,14 +45,17 @@ def upload_file(
             path=file_path,
             conversion_status="pending"
         )
-        db.add(db_file)
-        db.commit()
-        db.refresh(db_file)
-        if ext in IMAGE_EXTS:
+        
+        # For direct PPTX uploads, set converted_pptx_path to the original file
+        if is_pptx:
+            db_file.converted_pptx_path = file_path
+            db_file.conversion_status = "success"
+        # For images, collect for batch conversion
+        elif ext in IMAGE_EXTS:
             image_paths.append(file_path)
             image_db_objs.append(db_file)
+        # For other file types, convert immediately
         else:
-            # Convert non-image files immediately
             if ext in ['.pdf', '.txt', '.doc', '.docx']:
                 try:
                     pptx_path = FileConversionService.convert_to_pptx(file_path, ext, UPLOAD_DIR)
@@ -56,7 +65,11 @@ def upload_file(
                     db_file.conversion_status = f"failed: {e}"
             else:
                 db_file.conversion_status = "not_applicable"
-            db.commit()
+        
+        db.add(db_file)
+        db.commit()
+        db.refresh(db_file)
+        
         uploaded_files.append({
             "id": db_file.id,
             "filename": db_file.filename,  # Original filename
