@@ -4,6 +4,23 @@ An innovative educational platform that combines AI-powered teaching with intera
 
 ---
 
+## �� Project Overview & Vision
+
+**AI Tutor** is a full-stack educational platform designed to provide a dynamic, interactive learning experience with a virtual AI Teacher guiding you every step of the way.
+
+### Ultimate Vision
+- **Upload any file type** (text, PDF, PPT, image) and instantly get a teaching session.
+- **If you upload a presentation (PPT),** it is shown directly next to the virtual AI Teacher.
+- **If you upload any other file,** the platform summarizes and converts it into teaching slides.
+- **The AI Teacher explains content using a virtual board and hand animations** to help you understand better.
+- **At any time, you can:**
+  - Ask questions out loud (voice-to-text Q&A)
+  - Launch lab simulations for animated concept visualization
+  - Go back to any previous slide
+  - See all interaction happen in front of the virtual AI Teacher, who has all the tools she needs to help you learn.
+
+---
+
 ## 🚀 Project Overview & Architecture
 
 **AI Tutor** is a full-stack educational platform built with:
@@ -353,6 +370,7 @@ ai-tutor/
     - [x] Frontend: Teaching session UI (slide viewer, avatar, navigation controls)
     - [x] Frontend: "Teach me this slide" button (calls backend, shows AI explanation)
     - [x] Frontend: Highlight/pointing effect for slide content (MVP: text highlight)
+    - [ ] Frontend: Virtual board & hand/pointing animation (next step)
     - [ ] Frontend: User can ask questions about the current slide (optional for MVP)
     - [ ] Frontend: Simple annotation/drawing overlay (optional for MVP)
 - [ ] Real-time slide navigation (AI and user can go back/forth)
@@ -378,6 +396,13 @@ ai-tutor/
 
 #### **Phase 5: Vision Model Integration**
 - [x] Vision model integration for image-based slides (OpenAI primary, Gemini fallback)
+
+## ✨ Upcoming Feature: Virtual Board & Hand Animation
+
+The next major milestone is the implementation of a **virtual board** and **hand/pointing animation** for the AI Teacher:
+- When the AI Teacher explains a slide, the system will visually highlight, point to, or annotate relevant parts of the slide content (text or image) in sync with the explanation.
+- The board/animation will work for both text and image slides, making explanations more interactive and engaging.
+- This feature will lay the groundwork for future enhancements like drawing, gesture-based teaching, and real-time annotation.
 
 ---
 
