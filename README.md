@@ -15,10 +15,20 @@ An innovative educational platform that combines AI-powered teaching with intera
 - AI-powered teaching (OpenAI/Gemini)
 - File upload and automatic conversion to slides (PDF, DOCX, TXT, images → PPTX)
 - Modern dashboard and navigation
+- **File list with conversion status and download/preview links**
+- **Slide deck selection from converted files**
+- **AI Q&A form for interactive questions**
 - Persistent database and admin tools (pgAdmin, Redis Commander)
 - Automated database migrations
 - RESTful API with JWT authentication
 - Redis caching for AI answers
+
+### Dashboard Features
+- Upload files (PDF, DOCX, TXT, images)
+- View a list of uploaded files with conversion status
+- Download original and converted PPTX files
+- **Select a slide deck from converted files for further actions**
+- **Ask questions to the AI tutor and view answers**
 
 ---
 

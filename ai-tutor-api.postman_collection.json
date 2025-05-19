@@ -121,6 +121,38 @@
           "path": ["health"]
         }
       }
+    },
+    {
+      "name": "Download Original File",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/files/download/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "files", "download", "1"]
+        }
+      }
+    },
+    {
+      "name": "Download Converted PPTX",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/files/download-pptx/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "files", "download-pptx", "1"]
+        }
+      }
     }
   ],
   "event": [],

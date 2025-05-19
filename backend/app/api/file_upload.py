@@ -7,6 +7,7 @@ import os
 from uuid import uuid4
 from typing import List
 from backend.app.services.conversion_service import FileConversionService
+from fastapi.responses import FileResponse
 
 router = APIRouter()
 
@@ -91,4 +92,39 @@ def list_files(
             "conversion_status": f.conversion_status
         }
         for f in files
-    ] 
+    ]
+
+@router.get('/download/{file_id}', status_code=200)
+def download_file(
+    file_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    db_file = db.query(FileModel).filter(FileModel.id == file_id, FileModel.user_id == current_user.id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(
+        path=db_file.path,
+        filename=db_file.filename,
+        media_type=db_file.content_type,
+        headers={"Content-Disposition": f"attachment; filename=\"{db_file.filename}\""}
+    )
+
+@router.get('/download-pptx/{file_id}', status_code=200)
+def download_converted_pptx(
+    file_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    db_file = db.query(FileModel).filter(FileModel.id == file_id, FileModel.user_id == current_user.id).first()
+    if not db_file or not db_file.converted_pptx_path:
+        raise HTTPException(status_code=404, detail="Converted PPTX not found")
+    pptx_filename = db_file.filename
+    if not pptx_filename.lower().endswith('.pptx'):
+        pptx_filename = pptx_filename.rsplit('.', 1)[0] + '.pptx'
+    return FileResponse(
+        path=db_file.converted_pptx_path,
+        filename=pptx_filename,
+        media_type='application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        headers={"Content-Disposition": f"attachment; filename=\"{pptx_filename}\""}
+    ) 
