@@ -142,7 +142,7 @@ Student's question: {question}"""
         logger.info(f"Gemini API key configured (first 8 chars: {api_key[:8]}...)")
         genai.configure(api_key=api_key)
         logger.info("Making Gemini request...")
-        model = genai.GenerativeModel("gemini-1.5-pro")
+        model = genai.GenerativeModel("gemini-2.0-flash")
         gemini_response = model.generate_content(prompt)
         answer = gemini_response.text.strip()
         logger.info(f"Gemini request successful. Answer length: {len(answer)}")
@@ -236,89 +236,198 @@ def explain_slide(
         FileModel.converted_pptx_path.isnot(None)
     ).first()
     if not slide_deck:
-        raise HTTPException(status_code=404, detail="Slide deck not found or not accessible")
+        raise HTTPException(status_code=404, detail="Slide deck not found")
+
+    # Get model providers from settings
+    primary_provider = settings.PRIMARY_MODEL_PROVIDER.lower()
+    fallback_provider = settings.FALLBACK_MODEL_PROVIDER.lower()
+    logger.info(f"Settings - PRIMARY_MODEL_PROVIDER: {settings.PRIMARY_MODEL_PROVIDER}, FALLBACK_MODEL_PROVIDER: {settings.FALLBACK_MODEL_PROVIDER}")
+    logger.info(f"Resolved providers - primary: {primary_provider}, fallback: {fallback_provider}")
+
     slides_content = PPTXService.extract_text_from_pptx(slide_deck.converted_pptx_path)
     slide = next((s for s in slides_content if s["slide_number"] == slide_number), None)
     slide_text = slide["content"] if slide else ""
-    image_bytes, mime_type = PPTXService.extract_image_from_slide(slide_deck.converted_pptx_path, slide_number)
-    has_text = bool(slide_text.strip())
-    has_image = image_bytes is not None
-    # --- Prompt construction ---
-    if has_text and not has_image:
-        # Text-only slide
-        prompt = f"""You are an expert teacher. Explain the following slide to a student in a clear, engaging, and educational way. Use analogies, examples, and break down complex ideas. Only use the content provided below.\n\nSlide Content:\n{slide_text}\n"""
-        # OpenAI GPT-4o first
-        try:
-            api_key = settings.OPENAI_API_KEY.get_secret_value()
-            client = OpenAI(api_key=api_key)
-            request_data = {
-                "model": "gpt-4o",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.7,
-                "max_tokens": 512
-            }
-            response = client.chat.completions.create(**request_data)
-            explanation = response.choices[0].message.content.strip()
-            return {"explanation": explanation, "provider": "openai-gpt-4o"}
-        except Exception:
-            pass
-        # Gemini 2.0 Flash fallback
-        try:
-            api_key = settings.GEMINI_API_KEY.get_secret_value()
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-2.0-flash")
-            gemini_response = model.generate_content(prompt)
-            explanation = gemini_response.text.strip()
-            return {"explanation": explanation, "provider": "gemini-2.0-flash"}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"AI models are currently unavailable: {str(e)}")
-    elif has_image:
-        # Image or image+text slide
-        # Compose multimodal prompt
-        vision_prompt = "You are an expert teacher. Explain the content of this slide to a student in a clear, engaging, and educational way. Use analogies, examples, and break down complex ideas."
-        if has_text:
-            vision_prompt += f"\n\nSlide Caption:\n{slide_text}\n"
+    slide_image_path = next((s["image_path"] for s in PPTXService.extract_images_from_pptx(slide_deck.converted_pptx_path) if s["slide_number"] == slide_number), None)
+    is_multimodal = slide_image_path is not None
+
+    def call_openai(text, image_path=None):
+        api_key = settings.OPENAI_API_KEY.get_secret_value()
+        client = OpenAI(api_key=api_key)
+        
+        if image_path:
+            # Multimodal call with GPT-4 Vision
+            try:
+                with open(image_path, "rb") as image_file:
+                    base64_image = base64.b64encode(image_file.read()).decode("utf-8")
+                
+                mime_type, _ = mimetypes.guess_type(image_path)
+                if not mime_type or mime_type not in ["image/jpeg", "image/png"]:
+                    mime_type = "image/jpeg"  # Default to JPEG if unknown
+                
+                # Construct multimodal prompt
+                prompt = f"""You are an expert teacher. Explain this slide to a student in a clear, engaging, and educational way.
+Use analogies, examples, and break down complex ideas.
+
+Slide Content:
+{text if text.strip() else "This slide contains only an image."}
+
+Please analyze both the image and text (if present) to provide a comprehensive explanation."""
+                
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{mime_type};base64,{base64_image}"
+                                }
+                            }
+                        ]
+                    }
+                ]
+                
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",  # Using GPT-4o Mini for multimodal
+                    messages=messages,
+                    max_tokens=1024,
+                    temperature=0.7
+                )
+                return response.choices[0].message.content.strip()
+                
+            except Exception as e:
+                logger.error(f"OpenAI multimodal call failed: {str(e)}", exc_info=True)
+                raise
         else:
-            # Use filename as context if no text
-            vision_prompt += "\n\nThis slide contains only an image."
-        # --- OpenAI GPT-4o multimodal ---
+            # Text-only call with GPT-4
+            try:
+                prompt = f"""You are an expert teacher. Explain the following slide to a student in a clear, engaging, and educational way.
+Use analogies, examples, and break down complex ideas.
+
+Slide Content:
+{text}
+
+Please provide a comprehensive explanation that helps the student understand the material thoroughly."""
+                
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",  # Using GPT-4o Mini for text
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=1024,
+                    temperature=0.7
+                )
+                return response.choices[0].message.content.strip()
+                
+            except Exception as e:
+                logger.error(f"OpenAI text-only call failed: {str(e)}", exc_info=True)
+                raise
+
+    def call_gemini(text, image_path=None):
+        api_key = settings.GEMINI_API_KEY.get_secret_value()
+        genai.configure(api_key=api_key)
+        
+        if image_path:
+            # Multimodal call with Gemini Pro Vision
+            try:
+                model = genai.GenerativeModel("gemini-2.0-flash")
+                
+                # Construct multimodal prompt
+                prompt = f"""You are an expert teacher. Explain this slide to a student in a clear, engaging, and educational way.
+Use analogies, examples, and break down complex ideas.
+
+Slide Content:
+{text if text.strip() else "This slide contains only an image."}
+
+Please analyze both the image and text (if present) to provide a comprehensive explanation."""
+                
+                with open(image_path, "rb") as image_file:
+                    image_data = image_file.read()
+                
+                mime_type, _ = mimetypes.guess_type(image_path)
+                if not mime_type or mime_type not in ["image/jpeg", "image/png"]:
+                    mime_type = "image/jpeg"  # Default to JPEG if unknown
+                
+                response = model.generate_content(
+                    [
+                        prompt,
+                        {"mime_type": mime_type, "data": image_data}
+                    ],
+                    generation_config={
+                        "temperature": 0.7,
+                        "max_output_tokens": 1024,
+                    }
+                )
+                return response.text.strip()
+                
+            except Exception as e:
+                logger.error(f"Gemini multimodal call failed: {str(e)}", exc_info=True)
+                raise
+        else:
+            # Text-only call with Gemini Pro
+            try:
+                model = genai.GenerativeModel("gemini-2.0-flash")
+                
+                prompt = f"""You are an expert teacher. Explain the following slide to a student in a clear, engaging, and educational way.
+Use analogies, examples, and break down complex ideas.
+
+Slide Content:
+{text}
+
+Please provide a comprehensive explanation that helps the student understand the material thoroughly."""
+                
+                response = model.generate_content(
+                    prompt,
+                    generation_config={
+                        "temperature": 0.7,
+                        "max_output_tokens": 1024,
+                    }
+                )
+                return response.text.strip()
+                
+            except Exception as e:
+                logger.error(f"Gemini text-only call failed: {str(e)}", exc_info=True)
+                raise
+
+    def call_model(provider, text, image_path=None):
+        logger.info(f"About to call model provider: {provider} (type: {'multimodal' if image_path else 'text-only'})")
+        if provider not in ["openai", "gemini"]:
+            logger.error(f"Invalid provider specified: {provider}")
+            raise ValueError(f"Provider must be 'openai' or 'gemini', got: {provider}")
+
+        if provider == "openai":
+            return call_openai(text, image_path)
+        elif provider == "gemini":
+            return call_gemini(text, image_path)
+
+    try:
+        logger.info(f"Starting explain-slide for slide {slide_number} - Using primary provider: {primary_provider}")
+        if primary_provider not in ["openai", "gemini"]:
+            logger.error(f"Invalid primary provider in environment: {primary_provider}")
+            raise ValueError(f"PRIMARY_MODEL_PROVIDER must be 'openai' or 'gemini', got: {primary_provider}")
+
+        result = call_model(primary_provider, slide_text, slide_image_path if is_multimodal else None)
+        logger.info(f"Successfully got response from primary provider: {primary_provider}")
+        return {
+            "explanation": result,
+            "provider": f"{primary_provider}-{'multimodal' if is_multimodal else 'text'}"
+        }
+    except Exception as e:
+        logger.error(f"Primary provider ({primary_provider}) failed with error: {str(e)}")
         try:
-            api_key = settings.OPENAI_API_KEY.get_secret_value()
-            client = OpenAI(api_key=api_key)
-            base64_image = base64.b64encode(image_bytes).decode("utf-8")
-            openai_image_type = mime_type if mime_type in ["image/png", "image/jpeg"] else "image/png"
-            messages = [
-                {"role": "user", "content": [
-                    {"type": "text", "text": vision_prompt},
-                    {"type": "image_url", "image_url": {"url": f"data:{openai_image_type};base64,{base64_image}"}}
-                ]}
-            ]
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=messages,
-                temperature=0.7,
-                max_tokens=512
-            )
-            explanation = response.choices[0].message.content.strip()
-            return {"explanation": explanation, "provider": "openai-gpt-4o-multimodal"}
-        except Exception as e:
-            logger.error(f"OpenAI GPT-4o multimodal failed: {str(e)}")
-            pass
-        # --- Gemini 2.0 Flash multimodal ---
-        try:
-            api_key = settings.GEMINI_API_KEY.get_secret_value()
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-2.0-flash")
-            from google.genai import types
-            gemini_response = model.generate_content([
-                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-                vision_prompt
-            ])
-            explanation = gemini_response.text.strip()
-            return {"explanation": explanation, "provider": "gemini-2.0-flash-multimodal"}
-        except Exception as e:
-            logger.error(f"Gemini 2.0 Flash multimodal failed: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"AI models are currently unavailable for image slides: {str(e)}")
-    else:
-        logger.error(f"Slide {slide_number} in deck {slide_deck_id} is empty (no text or image)")
-        raise HTTPException(status_code=400, detail="Slide is empty (no text or image)") 
+            logger.info(f"Primary provider failed, attempting fallback provider: {fallback_provider}")
+            if fallback_provider not in ["openai", "gemini"]:
+                logger.error(f"Invalid fallback provider in environment: {fallback_provider}")
+                raise ValueError(f"FALLBACK_MODEL_PROVIDER must be 'openai' or 'gemini', got: {fallback_provider}")
+
+            result = call_model(fallback_provider, slide_text, slide_image_path if is_multimodal else None)
+            logger.info(f"Successfully got response from fallback provider: {fallback_provider}")
+            return {
+                "explanation": result,
+                "provider": f"{fallback_provider}-{'multimodal' if is_multimodal else 'text'}-fallback"
+            }
+        except Exception as e2:
+            logger.error(f"Both providers failed. Primary ({primary_provider}) error: {str(e)}. Fallback ({fallback_provider}) error: {str(e2)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Both AI providers failed. Primary ({primary_provider}) error: {str(e)}. Fallback ({fallback_provider}) error: {str(e2)}"
+            ) 

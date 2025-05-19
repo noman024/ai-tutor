@@ -40,10 +40,10 @@ An innovative educational platform that combines AI-powered teaching with intera
 ## 🛠️ Getting Started
 
 ### 1. Clone the Repository
-```bash
-git clone https://github.com/noman024/ai-tutor.git
-cd ai-tutor
-```
+   ```bash
+   git clone https://github.com/noman024/ai-tutor.git
+   cd ai-tutor
+   ```
 
 ### 2. Environment Setup
 - Copy and edit environment variables:
@@ -123,15 +123,15 @@ This will start:
   uvicorn main:app --reload --host 0.0.0.0 --port 8000
   ```
 - Run backend tests:
-  ```bash
+   ```bash
   docker-compose exec backend pytest
-  ```
+   ```
 
 #### Frontend
 - Run frontend locally (if not using Docker):
-  ```bash
-  cd frontend
-  npm install
+   ```bash
+   cd frontend
+   npm install
   npm run dev
   ```
 - Run frontend tests:
