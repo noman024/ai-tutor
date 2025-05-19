@@ -10,33 +10,54 @@ class FileConversionService:
     @staticmethod
     def txt_to_pptx(txt_path: str, pptx_path: str):
         prs = Presentation()
+        slide_width = prs.slide_width
+        slide_height = prs.slide_height
         with open(txt_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
-        # Chunk lines into slides (e.g., 10 lines per slide)
         chunk_size = 10
         for i in range(0, len(lines), chunk_size):
-            slide = prs.slides.add_slide(prs.slide_layouts[1])
+            slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank
             content = ''.join(lines[i:i+chunk_size])
-            textbox = slide.shapes.placeholders[1]
-            textbox.text = content
+            left = Inches(0.5)
+            top = Inches(0.5)
+            width = slide_width - Inches(1)
+            height = slide_height - Inches(1)
+            textbox = slide.shapes.add_textbox(left, top, width, height)
+            tf = textbox.text_frame
+            tf.word_wrap = True
+            p = tf.add_paragraph()
+            p.text = content
+            p.font.size = Pt(20)
         prs.save(pptx_path)
         return pptx_path
 
     @staticmethod
     def pdf_to_pptx(pdf_path: str, pptx_path: str):
         prs = Presentation()
+        slide_width = prs.slide_width
+        slide_height = prs.slide_height
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:
-                slide = prs.slides.add_slide(prs.slide_layouts[1])
+                slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank
                 text = page.extract_text() or ''
-                textbox = slide.shapes.placeholders[1]
-                textbox.text = text
+                left = Inches(0.5)
+                top = Inches(0.5)
+                width = slide_width - Inches(1)
+                height = slide_height - Inches(1)
+                textbox = slide.shapes.add_textbox(left, top, width, height)
+                tf = textbox.text_frame
+                tf.word_wrap = True
+                p = tf.add_paragraph()
+                p.text = text
+                p.font.size = Pt(20)
         prs.save(pptx_path)
         return pptx_path
 
     @staticmethod
     def docx_to_pptx(docx_path: str, pptx_path: str):
         prs = Presentation()
+        slide_width = prs.slide_width
+        slide_height = prs.slide_height
         doc = Document(docx_path)
         chunk = []
         chunk_size = 10
@@ -44,14 +65,30 @@ class FileConversionService:
             if para.text.strip():
                 chunk.append(para.text.strip())
                 if len(chunk) >= chunk_size:
-                    slide = prs.slides.add_slide(prs.slide_layouts[1])
-                    textbox = slide.shapes.placeholders[1]
-                    textbox.text = '\n'.join(chunk)
+                    slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank
+                    left = Inches(0.5)
+                    top = Inches(0.5)
+                    width = slide_width - Inches(1)
+                    height = slide_height - Inches(1)
+                    textbox = slide.shapes.add_textbox(left, top, width, height)
+                    tf = textbox.text_frame
+                    tf.word_wrap = True
+                    p = tf.add_paragraph()
+                    p.text = '\n'.join(chunk)
+                    p.font.size = Pt(20)
                     chunk = []
         if chunk:
-            slide = prs.slides.add_slide(prs.slide_layouts[1])
-            textbox = slide.shapes.placeholders[1]
-            textbox.text = '\n'.join(chunk)
+            slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank
+            left = Inches(0.5)
+            top = Inches(0.5)
+            width = slide_width - Inches(1)
+            height = slide_height - Inches(1)
+            textbox = slide.shapes.add_textbox(left, top, width, height)
+            tf = textbox.text_frame
+            tf.word_wrap = True
+            p = tf.add_paragraph()
+            p.text = '\n'.join(chunk)
+            p.font.size = Pt(20)
         prs.save(pptx_path)
         return pptx_path
 

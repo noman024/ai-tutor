@@ -14,7 +14,7 @@ interface Deck {
   isConverted?: boolean;
 }
 
-interface File {
+interface UploadedFile {
   id: number;
   filename: string;
   content_type: string;
@@ -26,7 +26,7 @@ interface File {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<UploadedFile[]>([]);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [selectedDeckId, setSelectedDeckId] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
